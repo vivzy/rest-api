@@ -10,7 +10,6 @@ import (
 func SetupRouter() *gin.Engine {
   router := gin.Default()
 
-  // the jwt middleware
   authMiddleware := &jwt.GinJWTMiddleware{
     Realm:      "test zone",
     Key:        []byte("secret key"),

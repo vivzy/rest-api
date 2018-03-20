@@ -1,4 +1,4 @@
-package app
+package models
 
 import (
   "database/sql"
@@ -9,18 +9,24 @@ import (
 
 func initDb() *gorp.DbMap {
   db, err := sql.Open("mysql", "gouser:vishnu@/instructions")
-  checkErr(err, "sql.Open failed")
+  CheckErr(err, "sql.Open failed")
 
   dbmap := &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8"}}
   dbmap.AddTableWithName(User{}, "user").SetKeys(true, "Id")
 
   err = dbmap.CreateTablesIfNotExists()
-  checkErr(err, "Create table failed")
+  CheckErr(err, "Create table failed")
   return dbmap
 }
 
-func checkErr(err error, msg string) {
+func CheckErr(err error, msg string) {
   if err != nil {
     log.Fatalln(msg, err)
+  }
+}
+
+func LogErr(err error, msg string) {
+  if err != nil {
+    log.Printf(msg, err)
   }
 }
