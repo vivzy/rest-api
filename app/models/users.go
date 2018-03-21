@@ -2,10 +2,10 @@ package models
 
 type User struct {
 	Id int64 `db:"id" json:"id"`
-	Username string `db:"username" json:"username"`
-	Firstname string `db:"firstname" json:"firstname"`
+	Username string `db:"username" json:"username" binding:"required"`
+	Firstname string `db:"firstname" json:"firstname" binding:"required"`
 	Lastname string `db:"lastname" json:"lastname"`
-	Password string `db:"password" json:"password"`
+	Password string `db:"password" json:"password" binding:"required"`
 	Joindate string `db:"joindate" json:"joindate"`
 }
 

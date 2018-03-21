@@ -5,10 +5,14 @@ import (
   _ "github.com/go-sql-driver/mysql"
   "gopkg.in/gorp.v1"
   "log"
+	"fmt"
 )
 
 func initDb() *gorp.DbMap {
-  db, err := sql.Open("mysql", "gouser:vishnu@/instructions")
+  conf := GetDbConfigs("prod")
+  dbUrl := fmt.Sprintf("%s:%s@/%s",conf.User, conf.Password, conf.Database)
+  fmt.Printf(dbUrl)
+  db, err := sql.Open("mysql", dbUrl)
   CheckErr(err, "sql.Open failed")
 
   dbmap := &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8"}}

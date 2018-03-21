@@ -64,30 +64,36 @@ func GetUser(c *gin.Context) {
 
 func PostUser(c *gin.Context) {
   var user models.User
-  c.BindJSON(&user)
-  u, ret := models.FetchUserFromUsername(user.Username)
-  if ret == nil {
-  	models.LogErr(ret, "username already exists : " + u.Username)
-  	c.JSON(500, gin.H{"error": "username already exists"})
+  if bErr := c.ShouldBindJSON(&user); bErr != nil {
+	  models.LogErr(bErr, "wrong input " )
+	  c.JSON(500, gin.H{"error": "wrong input"})
   }else {
 
-	  hashedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	  //gin.Logger()
-	  if err != nil {
-		  models.CheckErr(err, "Hashing failed")
-	  }
-	  user.Password = string(hashedPass)
+	  u, ret := models.FetchUserFromUsername(user.Username)
+	  if ret == nil {
+		  models.LogErr(ret, "username already exists : "+u.Username)
+		  c.JSON(500, gin.H{"error": "username already exists"})
+	  } else {
 
-	  if user.Username != "" && user.Password != "" {
-		  insertedUser, err := models.InsertUser(user)
+		  hashedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		  //gin.Logger()
+		  if err != nil {
+			  models.CheckErr(err, "Hashing failed")
+		  }
+		  finalPass := string(hashedPass)
+
+		  if user.Username != "" && user.Password != "" {
+			  user.Password = finalPass
+			  insertedUser, err := models.InsertUser(user)
 			  if err == nil {
 				  content := insertedUser
 				  c.JSON(201, content)
 			  } else {
 				  models.CheckErr(err, "Insert failed")
 			  }
-	  }else {
-		  c.JSON(422, gin.H{"error": "fields are empty"})
+		  } else {
+			  c.JSON(422, gin.H{"error": "fields are empty"})
+		  }
 	  }
   }
 }

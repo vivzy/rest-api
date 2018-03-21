@@ -8,19 +8,71 @@ import (
   "testing"
 	"math/rand"
 	"github.com/gin-gonic/gin/json"
+	"log"
+	"fmt"
+	"rest-api/app/models"
+	"github.com/rs/xid"
 )
 
-func getToken() (u, v string){
-	//return map[string][]string{"Authorization":{"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MjE1NzE5NzgsImlkIjoiYWdlbnRodWdzMyIsIm9yaWdfaWF0IjoxNTIxNTY4Mzc4fQ.vAsxl5ttH59g_eNBUhWPSgl5Fooml91pwc-CxHrUEGo"}}
-	return "Authorization","Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MjE1NzE5NzgsImlkIjoiYWdlbnRodWdzMyIsIm9yaWdfaWF0IjoxNTIxNTY4Mzc4fQ.vAsxl5ttH59g_eNBUhWPSgl5Fooml91pwc-CxHrUEGo"
+var username = xid.New().String()
+var password = RandString(6)
+var firstname = RandString(10)
+var lastname = RandString(5)
+var joindate = "2018-01-01"
+var mcPostBody = map[string]interface{}{
+"username": username,
+"password": password,
+"firstname": firstname,
+"lastname": lastname,
+"joindate": joindate,
 }
 
-func TestGetUser(t *testing.T) {
+var tokenResponse *TokenResponse
+var createdUser *models.User
+
+type TokenResponse struct {
+	Code int `json:"code"`
+	Response string `json:"response"`
+	Token string  `json:"token"`
+}
+
+func getToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	testRouter := SetupRouter()
+	postBody := map[string]interface{}{
+		"username": username,
+		"password": password,
+	}
+	body, _ := json.Marshal(postBody)
+	req, err := http.NewRequest("POST", "/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		t.Errorf("Post hearteat failed with error %d.", err)
+	}
+
+	resp := httptest.NewRecorder()
+	testRouter.ServeHTTP(resp, req)
+
+	if resp.Code != 200 {
+		t.Errorf("/login failed with error code %d.", resp.Code)
+	}
+	respRaw := bytes.NewReader(resp.Body.Bytes())
+	decoder := json.NewDecoder(respRaw)
+
+	decodeErr := decoder.Decode(&tokenResponse)
+
+	if decodeErr != nil {
+		log.Printf("decode error")
+		log.Fatal(err)
+	}
+}
+
+func testGetUser(t *testing.T) {
   gin.SetMode(gin.TestMode)
   testRouter := SetupRouter()
-
-  req, err := http.NewRequest("GET", "/api/v1/users/5", nil)
-  req.Header.Set(getToken())
+  log.Printf("fetching user with id %d", createdUser.Id)
+  req, err := http.NewRequest("GET", fmt.Sprintf("/api/v1/users/%d", createdUser.Id), nil)
+  req.Header.Set("Authorization", "Bearer " + tokenResponse.Token)
   if err != nil {
     t.Errorf("Get hearteat failed with error %d.", err)
   }
@@ -33,12 +85,13 @@ func TestGetUser(t *testing.T) {
   }
 }
 
-func TestGetUsers(t *testing.T) {
+func testGetUsers(t *testing.T) {
   gin.SetMode(gin.TestMode)
   testRouter := SetupRouter()
 
   req, err := http.NewRequest("GET", "/api/v1/users", nil)
-  req.Header.Set(getToken())
+  log.Printf(" auth token %s", tokenResponse.Token )
+  req.Header.Set("Authorization", "Bearer " + tokenResponse.Token)
   if err != nil {
     t.Errorf("Get hearteat failed with error %d.", err)
   }
@@ -51,27 +104,11 @@ func TestGetUsers(t *testing.T) {
   }
 }
 
-func TestPostUser(t *testing.T) {
+func testPostUser(t *testing.T) {
   gin.SetMode(gin.TestMode)
   testRouter := SetupRouter()
-  username := RandString(10)
-  password := RandString(6)
-  firstname := RandString(10)
-  lastname := RandString(5)
-  joindate := "2018-01-01"
-  //println("username : "+ username)
-  //println("password : "+ password)
-  mcPostBody := map[string]interface{}{
-  	"username": username,
-  	"password": password,
-  	"firstname": firstname,
-  	"lastname": lastname,
-  	"joindate": joindate,
-  }
-  body, _ := json.Marshal(mcPostBody)
-  //body := bytes.NewBuffer([]byte("{\"username\": \"" + username+ "\", \"password\": \""+ password + "\", \firstname\": \""+ firstname+ "\"" +
-  	//"\"lastname\": \""+lastname+"\",\"joindate\": \""+joindate+"\"}"))
 
+  body, _ := json.Marshal(mcPostBody)
   req, err := http.NewRequest("POST", "/adduser", bytes.NewReader(body))
   req.Header.Set("Content-Type", "application/json")
   if err != nil {
@@ -84,23 +121,22 @@ func TestPostUser(t *testing.T) {
   if resp.Code != 201 {
     t.Errorf("/api/v1/users failed with error code %d.", resp.Code)
   }
+  fmt.Printf(resp.Body.String())
+  respRaw := bytes.NewReader(resp.Body.Bytes())
+  decoder := json.NewDecoder(respRaw)
+
+  decodeErr := decoder.Decode(&createdUser)
+  fmt.Printf("created user with id %d", createdUser.Id)
+  if decodeErr != nil {
+	  log.Printf("decode error")
+	  log.Fatal(err)
+  }
 }
 
-func TestPostSameUser(t *testing.T) {
+func testPostSameUser(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	testRouter := SetupRouter()
-	username := "agenthugs1"
-	password := RandString(6)
-	firstname := RandString(10)
-	lastname := RandString(5)
-	joindate := "2018-01-01"
-	mcPostBody := map[string]interface{}{
-		"username": username,
-		"password": password,
-		"firstname": firstname,
-		"lastname": lastname,
-		"joindate": joindate,
-	}
+
 	body, _ := json.Marshal(mcPostBody)
 	req, err := http.NewRequest("POST", "/adduser", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -116,14 +152,14 @@ func TestPostSameUser(t *testing.T) {
 	}
 }
 
-func TestPutUser(t *testing.T) {
+func testPutUser(t *testing.T) {
   gin.SetMode(gin.TestMode)
   testRouter := SetupRouter()
 
-  body := bytes.NewBuffer([]byte("{\"firstname\": \""+RandString(10)+"\", \"lastname\": \""+RandString(5)+"\"}"))
+  body := bytes.NewBuffer([]byte("{\"firstname\": \"updatedname\", \"lastname\": \"updatedlastname\"}"))
 
-  req, err := http.NewRequest("PUT", "/api/v1/users/5", body)
-  req.Header.Set(getToken())
+  req, err := http.NewRequest("PUT", fmt.Sprintf("/api/v1/users/%d", createdUser.Id), body)
+	req.Header.Set("Authorization", "Bearer " + tokenResponse.Token)
   req.Header.Set("Content-Type", "application/json")
   if err != nil {
     t.Errorf("Put hearteat failed with error %d.", err)
@@ -132,9 +168,20 @@ func TestPutUser(t *testing.T) {
   resp := httptest.NewRecorder()
   testRouter.ServeHTTP(resp, req)
 
-  if resp.Code != 200 {
+  if resp.Code >= 500 {
     t.Errorf("/api/v1/users failed with error code %d.", resp.Code)
   }
+}
+
+func TestAllCases(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	t.Run("adding a new user", testPostUser)
+	t.Run("adding the same user ", testPostSameUser)
+	t.Run("login as created user", getToken)
+	t.Run("get all users", testGetUsers)
+	t.Run("get a user", testGetUser)
+	t.Run("update a user", testPutUser)
+
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

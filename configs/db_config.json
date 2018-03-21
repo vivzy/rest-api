@@ -1,0 +1,8 @@
+{
+  "prod": {
+    "host":"localhost",
+    "user":"gouser",
+    "password":"vishnu",
+    "database":"rest_api"
+  }
+}

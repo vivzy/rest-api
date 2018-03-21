@@ -12,7 +12,7 @@ func SetupRouter() *gin.Engine {
 
   authMiddleware := &jwt.GinJWTMiddleware{
     Realm:      "test zone",
-    Key:        []byte("secret key"),
+    Key:        []byte("verybigsecret"),
     Timeout:    time.Hour,
     MaxRefresh: time.Hour,
     Authenticator: app.AuthUsers,
