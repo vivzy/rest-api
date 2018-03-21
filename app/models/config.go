@@ -6,6 +6,8 @@ import (
 	"log"
 )
 
+// config management
+
 type dbConfig struct {
 	Host    string
 	User    string

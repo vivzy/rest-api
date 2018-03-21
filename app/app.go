@@ -32,6 +32,7 @@ func AuthUsers(userId string, password string, c *gin.Context) (string, bool) {
 	}
 }
 
+// Gets all users
 func GetUsers(c *gin.Context) {
   users, err := models.FetchAllUsers()
   if err == nil {
@@ -42,6 +43,7 @@ func GetUsers(c *gin.Context) {
 }
 
 
+//Gets a user by id
 func GetUser(c *gin.Context) {
   id := c.Params.ByName("id")
   user, err := models.FetchUserFromId(id)
@@ -62,6 +64,7 @@ func GetUser(c *gin.Context) {
   }
 }
 
+// Add a new user
 func PostUser(c *gin.Context) {
   var user models.User
   if bErr := c.ShouldBindJSON(&user); bErr != nil {
@@ -98,6 +101,7 @@ func PostUser(c *gin.Context) {
   }
 }
 
+// update an user
 func UpdateUser(c *gin.Context) {
   id := c.Params.ByName("id")
   user, err := models.FetchUserFromId(id)
@@ -130,6 +134,7 @@ func UpdateUser(c *gin.Context) {
   }
 }
 
+// delete an user
 func DeleteUser(c *gin.Context) {
   id := c.Params.ByName("id")
   user, err := models.FetchUserFromId(id)

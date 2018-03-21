@@ -10,6 +10,7 @@ import (
 func SetupRouter() *gin.Engine {
   router := gin.Default()
 
+  // Middleware for Auth
   authMiddleware := &jwt.GinJWTMiddleware{
     Realm:      "test zone",
     Key:        []byte("verybigsecret"),
@@ -30,8 +31,11 @@ func SetupRouter() *gin.Engine {
     TimeFunc: time.Now,
   }
 
+  // Routes
   router.POST("/login", authMiddleware.LoginHandler)
   router.POST("/adduser", app.PostUser)
+
+  // Routes with Auth
   v1 := router.Group("api/v1")
   v1.Use(authMiddleware.MiddlewareFunc())
   {
